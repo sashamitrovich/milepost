@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# Backups created by install.sh / uninstall.sh (should never be committed)
+*.milepost-backup.*
+
+# Local runtime state (created under ~/.claude, not here — guard anyway)
+.nudge-state/
+
+# Editor cruft
+*.swp
+*~

@@ -1,0 +1,8 @@
+{
+  "name": "milepost",
+  "description": "Milestone-triggered, in-session work diary for Claude Code. The model records meaningful milestones to plain-markdown log + status files as it works, across all projects. No database.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Saša Mitrović"
+  }
+}
