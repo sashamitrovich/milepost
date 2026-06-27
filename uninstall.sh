@@ -20,9 +20,9 @@ echo "Uninstalling milepost..."
 rm -f "$COMMANDS_DIR/milepost.md" "$COMMANDS_DIR/status.md" "$COMMANDS_DIR/reflect.md"
 echo "  ✓ commands removed"
 
-# 2) Hook script
-rm -f "$HOOKS_DIR/milepost-nudge.sh"
-echo "  ✓ hook script removed"
+# 2) Hook scripts
+rm -f "$HOOKS_DIR/milepost-nudge.sh" "$HOOKS_DIR/milepost-session-start.sh"
+echo "  ✓ hook scripts removed"
 
 # 3) Remove policy block from CLAUDE.md (between markers)
 if [ -f "$CLAUDE_MD" ] && grep -qF "$MARK_START" "$CLAUDE_MD"; then
@@ -53,6 +53,27 @@ if [ -f "$SETTINGS" ] && grep -qF "milepost-nudge.sh" "$SETTINGS"; then
   else
     rm -f "$tmp"
     echo "  ✗ failed to edit settings.json — left unchanged (backup saved)"
+  fi
+fi
+
+# 5) Remove SessionStart hook entries referencing the script from settings.json
+if [ -f "$SETTINGS" ] && grep -qF "milepost-session-start.sh" "$SETTINGS"; then
+  cp "$SETTINGS" "$SETTINGS.milepost-backup.$STAMP" 2>/dev/null
+  tmp="$(mktemp)"
+  if jq '
+      if .hooks.SessionStart then
+        .hooks.SessionStart |= map(
+          .hooks |= map(select((.command // "") | contains("milepost-session-start.sh") | not))
+        )
+        | .hooks.SessionStart |= map(select((.hooks | length) > 0))
+        | if (.hooks.SessionStart | length) == 0 then del(.hooks.SessionStart) else . end
+      else . end
+    ' "$SETTINGS" > "$tmp"; then
+    mv "$tmp" "$SETTINGS"
+    echo "  ✓ SessionStart hook removed from settings.json"
+  else
+    rm -f "$tmp"
+    echo "  ✗ failed to remove SessionStart hook from settings.json (left unchanged)"
   fi
 fi
 

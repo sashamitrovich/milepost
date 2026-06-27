@@ -49,6 +49,7 @@ Deciding *"a real milestone just happened"* is a judgment call — and only the 
 |------|------------|--------------|
 | 🧠 **Policy** | A global instruction added to `~/.claude/CLAUDE.md` | Tells Claude *when* a milestone is worth recording and *how* to write it — using its normal file tools, inline, while working. |
 | ⏱️ **Nudge** | A throttled `Stop` hook (default: once / 15 min) | Quietly reminds Claude to check for unrecorded milestones on long sessions, so logging stays consistent without nagging every turn. |
+| 📖 **Recall** | A read-only `SessionStart` hook | At the start of every session, surfaces each tracked project's `STATUS.md` back into context — so prior work and next steps are visible without asking. Never writes to the diary. |
 
 The result: **automatic, milestone-aware journaling** that doesn't interrupt your flow and doesn't depend on you remembering to run anything.
 
@@ -185,7 +186,7 @@ Yes — milepost is language- and framework-agnostic. It journals your work, not
 
 ## Contributing
 
-Issues and PRs welcome. milepost is intentionally small and hackable — the entire behavior lives in one policy file, three command prompts, and one short hook script.
+Issues and PRs welcome. milepost is intentionally small and hackable — the entire behavior lives in one policy file, three command prompts, and two short hook scripts.
 
 ## License
 

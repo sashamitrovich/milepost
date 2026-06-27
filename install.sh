@@ -25,10 +25,12 @@ cp "$SRC/commands/status.md"  "$COMMANDS_DIR/"
 cp "$SRC/commands/reflect.md" "$COMMANDS_DIR/"
 echo "  ✓ commands installed (/milepost, /status, /reflect)"
 
-# 2) Hook script
+# 2) Hook scripts
 cp "$SRC/hooks/milepost-nudge.sh" "$HOOKS_DIR/milepost-nudge.sh"
 chmod +x "$HOOKS_DIR/milepost-nudge.sh"
-echo "  ✓ nudge hook script installed"
+cp "$SRC/hooks/milepost-session-start.sh" "$HOOKS_DIR/milepost-session-start.sh"
+chmod +x "$HOOKS_DIR/milepost-session-start.sh"
+echo "  ✓ hook scripts installed (nudge + session-start)"
 
 # 3) Policy into global CLAUDE.md (idempotent, between markers)
 [ -f "$CLAUDE_MD" ] || : > "$CLAUDE_MD"
@@ -63,8 +65,24 @@ else
   fi
 fi
 
+# 5) SessionStart hook into settings.json (idempotent, merged not overwritten)
+if grep -qF "milepost-session-start.sh" "$SETTINGS"; then
+  echo "  • SessionStart hook already present in settings.json (left as-is)"
+else
+  cp "$SETTINGS" "$SETTINGS.milepost-backup.$STAMP" 2>/dev/null
+  tmp="$(mktemp)"
+  if jq '.hooks.SessionStart = ((.hooks.SessionStart // []) + [{"matcher":"","hooks":[{"type":"command","command":"bash ~/.claude/hooks/milepost-session-start.sh"}]}])' \
+        "$SETTINGS" > "$tmp"; then
+    mv "$tmp" "$SETTINGS"
+    echo "  ✓ SessionStart hook added to settings.json"
+  else
+    rm -f "$tmp"
+    echo "  ✗ failed to add SessionStart hook to settings.json (left unchanged)"
+  fi
+fi
+
 echo
-echo "Done. Restart Claude Code (or start a new session) to load the policy and hook."
+echo "Done. Restart Claude Code (or start a new session) to load the policy and hooks."
 echo "Diaries will live in: $MEMORY_DIR/<project>/"
 echo "Nudge interval: ${MILEPOST_NUDGE_INTERVAL:-900}s (set MILEPOST_NUDGE_INTERVAL to change)."
 echo "To remove everything: bash \"$SRC/uninstall.sh\""
