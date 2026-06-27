@@ -21,6 +21,8 @@ Use judgment — record **meaningful** events only, not routine steps. Write an 
 
 Do NOT log every edit, command, or intermediate step. Aim for high signal.
 
+**Decide autonomously.** Applying these criteria is your job, not the user's. Never ask the user whether something is worth logging or for permission to log — if it meets the bar above, just log it as part of finishing the work; if it doesn't, stay silent. Logging is a normal side effect of doing the task, not a separate request that needs sign-off.
+
 ## How to write
 
 1. Append to `log.md` in this format:
