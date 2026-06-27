@@ -77,6 +77,25 @@ if [ -f "$SETTINGS" ] && grep -qF "milepost-session-start.sh" "$SETTINGS"; then
   fi
 fi
 
+# 6) Remove milepost write permissions from settings.json
+if [ -f "$SETTINGS" ] && grep -qF "memory/milepost/**" "$SETTINGS"; then
+  cp "$SETTINGS" "$SETTINGS.milepost-backup.$STAMP" 2>/dev/null
+  tmp="$(mktemp)"
+  if jq '
+      if .permissions.allow then
+        .permissions.allow |= map(select((. | contains("memory/milepost/**")) | not))
+        | if (.permissions.allow | length) == 0 then del(.permissions.allow) else . end
+        | if (.permissions == {}) then del(.permissions) else . end
+      else . end
+    ' "$SETTINGS" > "$tmp"; then
+    mv "$tmp" "$SETTINGS"
+    echo "  ✓ milepost write permissions removed from settings.json"
+  else
+    rm -f "$tmp"
+    echo "  ✗ failed to remove milepost write permissions from settings.json (left unchanged)"
+  fi
+fi
+
 echo
 echo "Done. Your diary data in ~/.claude/memory/milepost/ was left intact."
 echo "Restart Claude Code to fully unload the hook."

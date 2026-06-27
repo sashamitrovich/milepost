@@ -167,8 +167,11 @@ No. Everything stays in local markdown files under `~/.claude/memory/milepost/`.
 ### Will it log secrets or sensitive code?
 No. The policy explicitly instructs Claude to summarize rather than record credentials, tokens, or sensitive file contents.
 
+### Do I have to approve every diary write?
+No. The installer adds two narrowly-scoped permission allow-rules to `settings.json` — `Edit(~/.claude/memory/milepost/**)` and `Write(~/.claude/memory/milepost/**)` — so Claude can journal without prompting you each time. The grant is limited to the milepost memory directory and nothing else; `uninstall.sh` removes it.
+
 ### Is it safe to install? Can I remove it cleanly?
-Yes. The installer is idempotent, backs up `settings.json` and `CLAUDE.md` before editing, and merges rather than overwrites. `uninstall.sh` removes the wiring and leaves your diaries intact.
+Yes. The installer is idempotent, backs up `settings.json` and `CLAUDE.md` before editing, and merges rather than overwrites. `uninstall.sh` removes the wiring (hooks, policy block, and the scoped write permissions) and leaves your diaries intact.
 
 ### Does it work for any programming language or project?
 Yes — milepost is language- and framework-agnostic. It journals your work, not your code, so it works for software, writing, research, or any long-running task in Claude Code.

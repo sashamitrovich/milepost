@@ -81,6 +81,25 @@ else
   fi
 fi
 
+# 6) Pre-approve diary writes so the user grants permission only once.
+#    Scoped strictly to the milepost memory dir; uses ~/ so it's portable.
+MP_RULES='["Edit(~/.claude/memory/milepost/**)","Write(~/.claude/memory/milepost/**)"]'
+if grep -qF "memory/milepost/**" "$SETTINGS"; then
+  echo "  • milepost write permissions already present in settings.json (left as-is)"
+else
+  cp "$SETTINGS" "$SETTINGS.milepost-backup.$STAMP" 2>/dev/null
+  tmp="$(mktemp)"
+  if jq --argjson rules "$MP_RULES" \
+        '.permissions.allow = ((.permissions.allow // []) + $rules | unique)' \
+        "$SETTINGS" > "$tmp"; then
+    mv "$tmp" "$SETTINGS"
+    echo "  ✓ milepost write permissions added to settings.json (granted once, no repeat prompts)"
+  else
+    rm -f "$tmp"
+    echo "  ✗ failed to add milepost write permissions to settings.json (left unchanged)"
+  fi
+fi
+
 echo
 echo "Done. Restart Claude Code (or start a new session) to load the policy and hooks."
 echo "Diaries will live in: $MEMORY_DIR/<project>/"
