@@ -19,6 +19,10 @@ command -v jq >/dev/null 2>&1 || { echo "ERROR: jq is required."; exit 1; }
 echo "Installing milepost from: $SRC"
 mkdir -p "$COMMANDS_DIR" "$HOOKS_DIR" "$MEMORY_DIR"
 
+# Diaries are plaintext; keep them readable by the owner only.
+chmod 700 "$MEMORY_DIR" "$CLAUDE_DIR/memory" 2>/dev/null
+echo "  ✓ diary directory permissions restricted to owner (chmod 700)"
+
 # 1) Commands
 cp "$SRC/commands/milepost.md" "$COMMANDS_DIR/"
 cp "$SRC/commands/status.md"  "$COMMANDS_DIR/"

@@ -131,6 +131,7 @@ bash uninstall.sh
 |---------|---------|-------------|
 | `MILEPOST_NUDGE_INTERVAL` | `900` (15 min) | Minimum seconds between nudges, per project. Raise it to journal less often; lower it to journal more. |
 | `.no-milepost` file | — | Drop an empty `.no-milepost` file at a project's root to exclude that project entirely: no diary, no nudges, no recall. For client work or anything you'd rather keep out of the diary. |
+| `MILEPOST_STRICT` | `0` | Set to `1` to make the secret guard also block **near-secrets**: IP addresses and e-mail addresses. Opt-in, because many legitimate diaries reference internal hosts. Set it where Claude Code's hooks see it — e.g. in `settings.json` under `"env": {"MILEPOST_STRICT": "1"}` or in your shell profile. |
 
 Prefer zero hooks? Skip the nudge entirely — the `CLAUDE.md` policy works on its own; it just leans on the model to remember during very long sessions.
 
@@ -169,11 +170,16 @@ No. Everything stays in local markdown files under `~/.claude/memory/milepost/`.
 ### Will it log secrets or sensitive code?
 Defense in depth, not just a polite instruction:
 1. **Policy** — Claude is told to reference secrets by location only ("token stored in `.ha_token`"), never by value, and to minimize near-secrets (internal IPs, serials, third-party personal data).
-2. **Guard hook** — a `PreToolUse` hook scans every write targeting the diary directory (including shell redirection via `Bash`) and *denies* anything matching secret patterns: private-key blocks, AWS/GitHub/Slack/Google/`sk-`-style keys, JWTs, bearer tokens, `password=`/`api_key:`-style assignments, and URLs with embedded credentials.
-3. **Audit** — you can scan existing diaries anytime: `bash ~/.claude/hooks/milepost-secret-scan.sh < ~/.claude/memory/milepost/<project>/log.md` (exit 1 + pattern names on a hit).
-4. **Opt-out** — a `.no-milepost` file at a project's root keeps that project out of the diary entirely.
+2. **Guard hook** — a `PreToolUse` hook scans every write targeting the diary directory (including shell redirection via `Bash`) and *denies* anything matching secret patterns: private-key blocks, AWS/GitHub/Slack/Google/`sk-`-style keys, JWTs, bearer tokens, `password=`/`api_key:`-style assignments, URLs with embedded credentials, plus a **high-entropy catch-all** for unknown token formats (≥32-char base64url-ish runs mixing upper/lower/digits — tuned so git SHAs, UUIDs, paths, and identifiers don't trip it).
+3. **Strict mode** — `MILEPOST_STRICT=1` additionally blocks IP addresses and e-mail addresses, for client work and privacy-sensitive setups.
+4. **Audit** — you can scan existing diaries anytime: `bash ~/.claude/hooks/milepost-secret-scan.sh < ~/.claude/memory/milepost/<project>/log.md` (exit 1 + pattern names on a hit).
+5. **Opt-out** — a `.no-milepost` file at a project's root keeps that project out of the diary entirely.
 
-Diaries are still plaintext on your disk — treat `~/.claude/memory/milepost/` like your shell history: local, private, and never committed or synced.
+### How is the diary protected on disk?
+Diaries are plaintext markdown, owned by you. The installer restricts `~/.claude/memory/milepost/` to owner-only access (`chmod 700`). There is deliberately **no at-rest encryption**: milepost's whole design is that Claude reads and writes the diary with its ordinary file tools, and encrypting it would break that (and your greppability) while adding key management — use full-disk encryption (FileVault/LUKS/BitLocker), which covers the stolen-device case properly. Treat the diary dir like your shell history: local, private, never committed or synced to shared storage.
+
+### Can a malicious repo trick Claude into leaking my diary?
+The theoretical risk with any memory system: instructions hidden in a repo's files could ask the agent to copy remembered content somewhere it doesn't belong (prompt injection). milepost's policy explicitly forbids copying diary contents into project files or external services, and the diary only ever contains milestone summaries — not credentials (see the guard above). For projects where even summaries are sensitive, use `.no-milepost` so there is nothing to leak. Review what agents write, as always.
 
 ### Do I have to approve every diary write?
 No. The installer adds two narrowly-scoped permission allow-rules to `settings.json` — `Edit(~/.claude/memory/milepost/**)` and `Write(~/.claude/memory/milepost/**)` — so Claude can journal without prompting you each time. The grant is limited to the milepost memory directory and nothing else; `uninstall.sh` removes it.
