@@ -49,7 +49,8 @@ Deciding *"a real milestone just happened"* is a judgment call — and only the 
 |------|------------|--------------|
 | 🧠 **Policy** | A global instruction added to `~/.claude/CLAUDE.md` | Tells Claude *when* a milestone is worth recording and *how* to write it — using its normal file tools, inline, while working. |
 | ⏱️ **Nudge** | A throttled `Stop` hook (default: once / 15 min) | Quietly reminds Claude to check for unrecorded milestones on long sessions, so logging stays consistent without nagging every turn. |
-| 📖 **Recall** | A read-only `SessionStart` hook | At the start of every session, surfaces each tracked project's `STATUS.md` back into context — so prior work and next steps are visible without asking. Never writes to the diary. |
+| 📖 **Recall** | A read-only `SessionStart` hook | At the start of every session, surfaces **the current project's** `STATUS.md` back into context (matched via a canonical, git-root-aware project slug), plus a one-line index of your other tracked projects — so prior work and next steps are visible without asking, and the injected context stays small no matter how many projects you track. Never writes to the diary. |
+| 🛡️ **Secret guard** | A `PreToolUse` hook on `Write`/`Edit`/`Bash` | Mechanically **blocks** any diary write containing secret-shaped content (API keys, tokens, private keys, JWTs, credential assignments, URLs with embedded passwords) and tells Claude to rewrite the entry referencing secrets by location, never by value. The policy alone asks nicely; this enforces it. |
 
 The result: **automatic, milestone-aware journaling** that doesn't interrupt your flow and doesn't depend on you remembering to run anything.
 
@@ -88,7 +89,7 @@ Readable by humans. Parseable by machines. Owned by you.
 - 🌍 **Works across every project** — one global install; per-project diaries.
 - 🧭 **Living status file** — always know the current state and next step of any task.
 - 🛠️ **Manual controls** — `/milepost`, `/status`, `/reflect` when you want them.
-- 🔒 **Privacy-first** — secrets and sensitive contents are summarized, never logged.
+- 🔒 **Privacy-first, enforced** — policy tells Claude to summarize secrets, and a `PreToolUse` guard hook mechanically blocks secret-shaped content from ever landing in the diary. Per-project opt-out via a `.no-milepost` file.
 - ↩️ **Reversible & safe** — idempotent installer with automatic backups; clean uninstaller that keeps your data.
 
 ---
@@ -129,6 +130,7 @@ bash uninstall.sh
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `MILEPOST_NUDGE_INTERVAL` | `900` (15 min) | Minimum seconds between nudges, per project. Raise it to journal less often; lower it to journal more. |
+| `.no-milepost` file | — | Drop an empty `.no-milepost` file at a project's root to exclude that project entirely: no diary, no nudges, no recall. For client work or anything you'd rather keep out of the diary. |
 
 Prefer zero hooks? Skip the nudge entirely — the `CLAUDE.md` policy works on its own; it just leans on the model to remember during very long sessions.
 
@@ -165,7 +167,13 @@ claude-mem captures everything into a SQLite + vector database. milepost stores 
 No. Everything stays in local markdown files under `~/.claude/memory/milepost/`. No database, no cloud, no telemetry.
 
 ### Will it log secrets or sensitive code?
-No. The policy explicitly instructs Claude to summarize rather than record credentials, tokens, or sensitive file contents.
+Defense in depth, not just a polite instruction:
+1. **Policy** — Claude is told to reference secrets by location only ("token stored in `.ha_token`"), never by value, and to minimize near-secrets (internal IPs, serials, third-party personal data).
+2. **Guard hook** — a `PreToolUse` hook scans every write targeting the diary directory (including shell redirection via `Bash`) and *denies* anything matching secret patterns: private-key blocks, AWS/GitHub/Slack/Google/`sk-`-style keys, JWTs, bearer tokens, `password=`/`api_key:`-style assignments, and URLs with embedded credentials.
+3. **Audit** — you can scan existing diaries anytime: `bash ~/.claude/hooks/milepost-secret-scan.sh < ~/.claude/memory/milepost/<project>/log.md` (exit 1 + pattern names on a hit).
+4. **Opt-out** — a `.no-milepost` file at a project's root keeps that project out of the diary entirely.
+
+Diaries are still plaintext on your disk — treat `~/.claude/memory/milepost/` like your shell history: local, private, and never committed or synced.
 
 ### Do I have to approve every diary write?
 No. The installer adds two narrowly-scoped permission allow-rules to `settings.json` — `Edit(~/.claude/memory/milepost/**)` and `Write(~/.claude/memory/milepost/**)` — so Claude can journal without prompting you each time. The grant is limited to the milepost memory directory and nothing else; `uninstall.sh` removes it.
@@ -189,7 +197,7 @@ Yes — milepost is language- and framework-agnostic. It journals your work, not
 
 ## Contributing
 
-Issues and PRs welcome. milepost is intentionally small and hackable — the entire behavior lives in one policy file, three command prompts, and two short hook scripts.
+Issues and PRs welcome. milepost is intentionally small and hackable — the entire behavior lives in one policy file, three command prompts, and five short hook scripts.
 
 ## License
 

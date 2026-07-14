@@ -1,30 +1,54 @@
 #!/bin/bash
 # Milepost SessionStart hook.
-# At the start of a session, surfaces the milestone diary — every tracked
-# project's STATUS.md — into context, so prior work/status is always visible
-# without having to ask. Read-only: it never writes to the diary.
+# Surfaces the milestone diary for THE CURRENT PROJECT ONLY (matched via the
+# canonical slug helper), plus a one-line index of the other tracked projects.
+# Injecting every project's STATUS.md used to overflow the hook-output limit
+# once a few projects existed, which silently broke recall — so it doesn't.
 #
-# Output is injected via hookSpecificOutput.additionalContext. Stays silent
-# (exits 0, no output) if there is no diary yet. Never blocks the session.
+# If no diary exists yet for this project, it says so, which prompts diary
+# creation at the first milestone instead of failing silently.
+#
+# Respects a `.no-milepost` file at the project root (opt-out: no recall, and
+# the policy/nudge skip journaling too). Read-only: never writes to the diary.
 
 MILEPOST_DIR="$HOME/.claude/memory/milepost"
+SLUG_HELPER="$HOME/.claude/hooks/milepost-slug.sh"
 
-[ -d "$MILEPOST_DIR" ] || exit 0
+input="$(cat)"
+cwd="$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null)"
+[ -z "$cwd" ] && cwd="$PWD"
 
-statuses="$(find "$MILEPOST_DIR" -name "STATUS.md" 2>/dev/null | sort)"
-[ -z "$statuses" ] && exit 0
+# Project root (for the opt-out check) mirrors the slug helper's anchoring.
+root="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)"
+[ -z "$root" ] && root="$cwd"
+[ -f "$root/.no-milepost" ] && exit 0
+
+if [ -f "$SLUG_HELPER" ]; then
+  slug="$(bash "$SLUG_HELPER" "$cwd" 2>/dev/null)"
+else
+  slug="$(printf '%s' "$root" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+fi
+[ -z "$slug" ] && slug="global"
+
+status_file="$MILEPOST_DIR/$slug/STATUS.md"
 
 context="$(
-  echo "📔 Milepost diary — status of previous work across sessions:"
-  echo
-  while IFS= read -r status_file; do
-    [ -z "$status_file" ] && continue
-    project="$(basename "$(dirname "$status_file")")"
-    echo "===== $project ====="
+  if [ -f "$status_file" ]; then
+    echo "📔 Milepost diary — status of this project ($slug):"
+    echo
     cat "$status_file"
     echo
-  done <<< "$statuses"
-  echo "(Full per-project history is in each project's log.md under $MILEPOST_DIR)"
+    echo "(Full history: $MILEPOST_DIR/$slug/log.md)"
+  else
+    echo "📔 Milepost: no diary exists yet for this project (expected at $MILEPOST_DIR/$slug/). Per the Milepost policy, create log.md and STATUS.md there when the first milestone occurs."
+  fi
+
+  others="$(find "$MILEPOST_DIR" -mindepth 2 -maxdepth 2 -name STATUS.md 2>/dev/null \
+    | sed 's|.*/\([^/]*\)/STATUS.md|\1|' | grep -vx "$slug" | sort | paste -sd ',' - | sed 's/,/, /g')"
+  if [ -n "$others" ]; then
+    echo
+    echo "Other projects with milepost diaries (read their STATUS.md under $MILEPOST_DIR/<slug>/ on demand): $others"
+  fi
 )"
 
 [ -z "$context" ] && exit 0

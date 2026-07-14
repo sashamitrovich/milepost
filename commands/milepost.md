@@ -8,7 +8,7 @@ Create a milestone entry for the current task, even if no automatic trigger fire
 
 Follow the Milepost policy (loaded from your global instructions). Specifically:
 
-1. Determine `<project-slug>` from the current working directory (replace `/` and spaces with `-`, drop any leading `-`). Target directory: `~/.claude/memory/milepost/<project-slug>/`. Create it if missing.
+1. Determine `<project-slug>` with `bash ~/.claude/hooks/milepost-slug.sh` (canonical rule: git repo root of the cwd — or the cwd itself outside git — lowercased, non-alphanumeric runs → `-`, leading/trailing `-` trimmed). Target directory: `~/.claude/memory/milepost/<project-slug>/`. Create it if missing.
 2. Reflecting on the current session, append a concise entry to `log.md`:
 
    ```markdown

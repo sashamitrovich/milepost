@@ -21,7 +21,9 @@ rm -f "$COMMANDS_DIR/milepost.md" "$COMMANDS_DIR/status.md" "$COMMANDS_DIR/refle
 echo "  ✓ commands removed"
 
 # 2) Hook scripts
-rm -f "$HOOKS_DIR/milepost-nudge.sh" "$HOOKS_DIR/milepost-session-start.sh"
+rm -f "$HOOKS_DIR/milepost-nudge.sh" "$HOOKS_DIR/milepost-session-start.sh" \
+      "$HOOKS_DIR/milepost-slug.sh" "$HOOKS_DIR/milepost-secret-scan.sh" \
+      "$HOOKS_DIR/milepost-secret-guard.sh"
 echo "  ✓ hook scripts removed"
 
 # 3) Remove policy block from CLAUDE.md (between markers)
@@ -77,7 +79,28 @@ if [ -f "$SETTINGS" ] && grep -qF "milepost-session-start.sh" "$SETTINGS"; then
   fi
 fi
 
-# 6) Remove milepost write permissions from settings.json
+# 6) Remove PreToolUse secret-guard entries referencing the script from settings.json
+if [ -f "$SETTINGS" ] && grep -qF "milepost-secret-guard.sh" "$SETTINGS"; then
+  cp "$SETTINGS" "$SETTINGS.milepost-backup.$STAMP" 2>/dev/null
+  tmp="$(mktemp)"
+  if jq '
+      if .hooks.PreToolUse then
+        .hooks.PreToolUse |= map(
+          .hooks |= map(select((.command // "") | contains("milepost-secret-guard.sh") | not))
+        )
+        | .hooks.PreToolUse |= map(select((.hooks | length) > 0))
+        | if (.hooks.PreToolUse | length) == 0 then del(.hooks.PreToolUse) else . end
+      else . end
+    ' "$SETTINGS" > "$tmp"; then
+    mv "$tmp" "$SETTINGS"
+    echo "  ✓ PreToolUse secret guard removed from settings.json"
+  else
+    rm -f "$tmp"
+    echo "  ✗ failed to remove PreToolUse secret guard from settings.json (left unchanged)"
+  fi
+fi
+
+# 7) Remove milepost write permissions from settings.json
 if [ -f "$SETTINGS" ] && grep -qF "memory/milepost/**" "$SETTINGS"; then
   cp "$SETTINGS" "$SETTINGS.milepost-backup.$STAMP" 2>/dev/null
   tmp="$(mktemp)"

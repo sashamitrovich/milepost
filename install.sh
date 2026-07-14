@@ -26,11 +26,12 @@ cp "$SRC/commands/reflect.md" "$COMMANDS_DIR/"
 echo "  ✓ commands installed (/milepost, /status, /reflect)"
 
 # 2) Hook scripts
-cp "$SRC/hooks/milepost-nudge.sh" "$HOOKS_DIR/milepost-nudge.sh"
-chmod +x "$HOOKS_DIR/milepost-nudge.sh"
-cp "$SRC/hooks/milepost-session-start.sh" "$HOOKS_DIR/milepost-session-start.sh"
-chmod +x "$HOOKS_DIR/milepost-session-start.sh"
-echo "  ✓ hook scripts installed (nudge + session-start)"
+for h in milepost-nudge.sh milepost-session-start.sh milepost-slug.sh \
+         milepost-secret-scan.sh milepost-secret-guard.sh; do
+  cp "$SRC/hooks/$h" "$HOOKS_DIR/$h"
+  chmod +x "$HOOKS_DIR/$h"
+done
+echo "  ✓ hook scripts installed (nudge, session-start, slug helper, secret scan + guard)"
 
 # 3) Policy into global CLAUDE.md (idempotent, between markers)
 [ -f "$CLAUDE_MD" ] || : > "$CLAUDE_MD"
@@ -81,7 +82,24 @@ else
   fi
 fi
 
-# 6) Pre-approve diary writes so the user grants permission only once.
+# 6) PreToolUse secret guard into settings.json (idempotent, merged not overwritten).
+#    Blocks secret-shaped content from being written into the diary.
+if grep -qF "milepost-secret-guard.sh" "$SETTINGS"; then
+  echo "  • PreToolUse secret guard already present in settings.json (left as-is)"
+else
+  cp "$SETTINGS" "$SETTINGS.milepost-backup.$STAMP" 2>/dev/null
+  tmp="$(mktemp)"
+  if jq '.hooks.PreToolUse = ((.hooks.PreToolUse // []) + [{"matcher":"Write|Edit|Bash","hooks":[{"type":"command","command":"bash ~/.claude/hooks/milepost-secret-guard.sh"}]}])' \
+        "$SETTINGS" > "$tmp"; then
+    mv "$tmp" "$SETTINGS"
+    echo "  ✓ PreToolUse secret guard added to settings.json"
+  else
+    rm -f "$tmp"
+    echo "  ✗ failed to add PreToolUse secret guard to settings.json (left unchanged)"
+  fi
+fi
+
+# 7) Pre-approve diary writes so the user grants permission only once.
 #    Scoped strictly to the milepost memory dir; uses ~/ so it's portable.
 MP_RULES='["Edit(~/.claude/memory/milepost/**)","Write(~/.claude/memory/milepost/**)"]'
 if grep -qF "memory/milepost/**" "$SETTINGS"; then
