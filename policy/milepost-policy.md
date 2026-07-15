@@ -8,7 +8,7 @@ While working on any task, keep a plain-markdown **milepost** so progress and co
 - `log.md` — append-only, timestamped milestone entries (newest at the bottom).
 - `STATUS.md` — a short, living snapshot of where the task stands right now and what's next. Overwrite/update it; keep it current, not historical.
 
-`<project-slug>` = the canonical slug of the project root: take the git repository root of the current working directory (the cwd itself if not inside a git repo), lowercase it, replace every run of non-alphanumeric characters with a single `-`, and trim leading/trailing `-`. Example: `/Users/me/dev/My_App/subdir` → `users-me-dev-my-app` (when `My_App` is the repo root). When available, compute it with `bash ~/.claude/hooks/milepost-slug.sh` instead of deriving it by hand — the hooks use the same helper, so everything agrees on the diary location. Create the folder and files on first milestone if they don't exist.
+`<project-slug>` = the canonical slug of the project root: take the git repository root of the current working directory (the cwd itself if not inside a git repo), lowercase it, replace every run of non-alphanumeric characters with a single `-`, and trim leading/trailing `-`. Example: `/Users/me/dev/My_App/subdir` → `users-me-dev-my-app` (when `My_App` is the repo root). The milepost SessionStart context already states this project's slug (in its diary path or "no diary yet" notice) — prefer that; the `milepost-slug.sh` helper (installed alongside the milepost hooks) computes the same thing. Create the folder and files on first milestone if they don't exist.
 
 **Opt-out:** if a `.no-milepost` file exists at the project root, do not journal that project at all — no diary, no entries, no status.
 

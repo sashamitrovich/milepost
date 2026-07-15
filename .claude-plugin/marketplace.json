@@ -1,0 +1,19 @@
+{
+  "name": "milepost",
+  "description": "Home of the milepost plugin: long-term, plain-markdown, milestone-triggered memory for Claude Code.",
+  "owner": {
+    "name": "Saša Mitrović",
+    "url": "https://github.com/sashamitrovich"
+  },
+  "plugins": [
+    {
+      "name": "milepost",
+      "source": "./",
+      "description": "Long-term memory for Claude Code — a milestone-triggered, in-session work diary in plain markdown. No database, no lock-in, fully greppable.",
+      "version": "0.3.0",
+      "author": {
+        "name": "Saša Mitrović"
+      }
+    }
+  ]
+}

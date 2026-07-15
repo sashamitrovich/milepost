@@ -21,9 +21,9 @@
 
 > Pick up a long-running task days or weeks later and Claude already knows what you did, what you decided, and what's next.
 
-```bash
-git clone https://github.com/sashamitrovich/milepost.git
-cd milepost && bash install.sh
+```
+/plugin marketplace add sashamitrovich/milepost
+/plugin install milepost@milepost
 ```
 
 ---
@@ -96,22 +96,25 @@ Readable by humans. Parseable by machines. Owned by you.
 
 ## Quick start
 
+**Option A — plugin install (recommended).** Inside Claude Code:
+
+```
+/plugin marketplace add sashamitrovich/milepost
+/plugin install milepost@milepost
+```
+
+Everything is wired natively: the commands, the nudge, the recall, and the secret guard load from the plugin, and the policy is injected at session start (your `CLAUDE.md` is never touched). First time Claude journals, approve the diary write with "always allow" — the plugin cannot pre-grant permissions for you. Remove with `/plugin uninstall milepost@milepost`; your diaries stay put.
+
+**Option B — script install.** For older Claude Code versions, or if you prefer the policy as a visible block in your own `CLAUDE.md` and pre-granted diary-write permissions:
+
 ```bash
-# 1. Clone
 git clone https://github.com/sashamitrovich/milepost.git
-cd milepost
-
-# 2. Install (backs up & merges your ~/.claude config — never overwrites)
-bash install.sh
-
-# 3. Restart Claude Code, then just work. Claude journals milestones for you.
+cd milepost && bash install.sh   # idempotent; backs up & merges, never overwrites
 ```
 
-Remove it anytime — your diaries stay put:
+Remove with `bash uninstall.sh` — diaries stay put.
 
-```bash
-bash uninstall.sh
-```
+> Use **one** install mode, not both — running both duplicates the hooks (harmless but noisy). The diary location and format are identical either way, so you can switch modes without losing anything.
 
 ---
 

@@ -14,7 +14,7 @@
 # value.
 
 MILEPOST_DIR="$HOME/.claude/memory/milepost"
-SCANNER="$HOME/.claude/hooks/milepost-secret-scan.sh"
+SCANNER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/milepost-secret-scan.sh"
 
 input="$(cat)"
 

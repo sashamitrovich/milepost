@@ -12,7 +12,8 @@
 # Never exits non-zero in a way that blocks stopping.
 
 THRESHOLD_SECONDS="${MILEPOST_NUDGE_INTERVAL:-900}"
-SLUG_HELPER="$HOME/.claude/hooks/milepost-slug.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SLUG_HELPER="$SCRIPT_DIR/milepost-slug.sh"
 
 input="$(cat)"
 

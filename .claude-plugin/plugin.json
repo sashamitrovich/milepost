@@ -1,8 +1,14 @@
 {
   "name": "milepost",
+  "displayName": "Milepost",
   "description": "Milestone-triggered, in-session work diary for Claude Code. The model records meaningful milestones to plain-markdown log + status files as it works, across all projects. No database.",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "author": {
-    "name": "Saša Mitrović"
-  }
+    "name": "Saša Mitrović",
+    "url": "https://github.com/sashamitrovich"
+  },
+  "homepage": "https://github.com/sashamitrovich/milepost",
+  "repository": "https://github.com/sashamitrovich/milepost",
+  "license": "MIT",
+  "keywords": ["memory", "diary", "journal", "milestones", "persistence", "markdown", "long-term-memory"]
 }

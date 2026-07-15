@@ -10,9 +10,17 @@
 #
 # Respects a `.no-milepost` file at the project root (opt-out: no recall, and
 # the policy/nudge skip journaling too). Read-only: never writes to the diary.
+#
+# Works in both install modes: script install (this file lives in
+# ~/.claude/hooks/, policy is a CLAUDE.md block) and native plugin install
+# (this file lives in the plugin's hooks/, and since a plugin cannot edit
+# CLAUDE.md, this hook injects the policy itself when CLAUDE.md lacks it).
+# Sibling helpers are resolved relative to this script, not a fixed path.
 
 MILEPOST_DIR="$HOME/.claude/memory/milepost"
-SLUG_HELPER="$HOME/.claude/hooks/milepost-slug.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SLUG_HELPER="$SCRIPT_DIR/milepost-slug.sh"
+POLICY_FILE="$SCRIPT_DIR/../policy/milepost-policy.md"
 
 input="$(cat)"
 cwd="$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null)"
@@ -33,6 +41,17 @@ fi
 status_file="$MILEPOST_DIR/$slug/STATUS.md"
 
 context="$(
+  # Plugin mode: CLAUDE.md has no milepost block, so deliver the policy here.
+  # Script-install mode ships hooks without the ../policy dir, and CLAUDE.md
+  # carries the block, so this stays silent there.
+  if [ -f "$POLICY_FILE" ] && ! grep -qF "milepost:start" "$HOME/.claude/CLAUDE.md" 2>/dev/null; then
+    echo "📔 Milepost policy (follow this while working):"
+    echo
+    cat "$POLICY_FILE"
+    echo
+    echo "---"
+  fi
+
   if [ -f "$status_file" ]; then
     echo "📔 Milepost diary — status of this project ($slug):"
     echo

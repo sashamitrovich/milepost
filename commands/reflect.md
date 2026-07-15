@@ -4,7 +4,7 @@ description: Synthesize patterns and a progress summary from milepost entries
 
 # Reflect on the milepost
 
-1. Determine `<project-slug>` with `bash ~/.claude/hooks/milepost-slug.sh` (or, if the user names a project, use that). Milepost dir: `~/.claude/memory/milepost/<project-slug>/`.
+1. Determine `<project-slug>` (stated in the milepost SessionStart context; else: git repo root of the cwd — or the cwd itself — lowercased, non-alphanumeric runs → `-`, trimmed; or, if the user names a project, use that). Milepost dir: `~/.claude/memory/milepost/<project-slug>/`.
 2. Read `log.md` (all milestone entries) and `STATUS.md`.
 3. Produce a synthesis covering:
    - **Progress so far** — what's been accomplished, in order.
